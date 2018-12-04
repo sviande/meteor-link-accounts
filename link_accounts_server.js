@@ -2,6 +2,14 @@ import { Meteor } from 'meteor/meteor';
 import { Accounts } from 'meteor/accounts-base';
 import { check, Match } from 'meteor/check';
 import { OAuth } from 'meteor/oauth';
+import EventEmitter from 'events';
+
+const Emitter = new EventEmitter();
+const Events = {
+  SERVICE_LINKED: 'account_linked'
+};
+
+export { Emitter, Events };
 
 Accounts.registerLoginHandler(function(options) {
   if (!options.link) return undefined;
@@ -76,10 +84,14 @@ Accounts.LinkUserFromExternalService = function(serviceName, serviceData, option
     });
 
     Meteor.users.update(user._id, { $set: setAttrs });
-    return {
+    const result = {
       type: serviceName,
       userId: user._id
     };
+
+    Emitter.emit(Events.SERVICE_LINKED, result);
+
+    return result;
   }
 };
 
